@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor de Fotos - Instagram</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 800px;
+            width: 100%;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: rgba(102, 126, 234, 0.05);
+        }
+        
+        .upload-area.dragover {
+            background: rgba(102, 126, 234, 0.1);
+            border-color: #764ba2;
+        }
+        
+        .upload-icon {
+            font-size: 3em;
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+        
+        .upload-text {
+            font-size: 1.2em;
+            color: #666;
+            margin-bottom: 15px;
+        }
+        
+        .upload-subtext {
+            color: #999;
+            font-size: 0.9em;
+        }
+        
+        #fileInput {
+            display: none;
+        }
+        
+        .photo-container {
+            display: none;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .photo-preview {
+            max-width: 100%;
+            max-height: 500px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+        
+        .controls {
+            display: none;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .control-group {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 15px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .control-group h3 {
+            margin: 0 0 15px 0;
+            color: #495057;
+            font-size: 1.1em;
+        }
+        
+        .control-item {
+            margin-bottom: 15px;
+        }
+        
+        .control-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #495057;
+            font-weight: 500;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        
+        .value-display {
+            font-size: 0.9em;
+            color: #666;
+            text-align: right;
+            margin-top: 5px;
+        }
+        
+        .action-buttons {
+            display: none;
+            text-align: center;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #495057;
+            border: 2px solid #dee2e6;
+        }
+        
+        .btn-secondary:hover {
+            background: #e9ecef;
+            transform: translateY(-2px);
+        }
+        
+        .btn-success {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(40, 167, 69, 0.3);
+        }
+        
+        .tips {
+            background: linear-gradient(135deg, #667eea10, #764ba210);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 30px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .tips h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+        
+        .tips ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        
+        .tips li {
+            margin-bottom: 8px;
+            color: #495057;
+        }
+        
+        canvas {
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                padding: 20px;
+            }
+            
+            .controls {
+                grid-template-columns: 1fr;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn {
+                min-width: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📸 Editor para Instagram</h1>
+        
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-icon">📱</div>
+            <div class="upload-text">Arrastra tu foto aquí o haz clic para seleccionar</div>
+            <div class="upload-subtext">Formatos: JPG, PNG, WebP (No HEIC)</div>
+            <input type="file" id="fileInput" accept="image/jpeg,image/jpg,image/png,image/webp">
+        </div>
+        
+        <div class="photo-container" id="photoContainer">
+            <img id="photoPreview" class="photo-preview" alt="Vista previa">
+            <canvas id="canvas"></canvas>
+        </div>
+        
+        <div class="controls" id="controls">
+            <div class="control-group">
+                <h3>🎨 Colores y Exposición</h3>
+                <div class="control-item">
+                    <label for="brightness">Brillo</label>
+                    <input type="range" id="brightness" min="0" max="200" value="100">
+                    <div class="value-display" id="brightnessValue">100%</div>
+                </div>
+                <div class="control-item">
+                    <label for="contrast">Contraste</label>
+                    <input type="range" id="contrast" min="0" max="200" value="100">
+                    <div class="value-display" id="contrastValue">100%</div>
+                </div>
+                <div class="control-item">
+                    <label for="saturation">Saturación</label>
+                    <input type="range" id="saturation" min="0" max="200" value="100">
+                    <div class="value-display" id="saturationValue">100%</div>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <h3>✨ Efectos</h3>
+                <div class="control-item">
+                    <label for="warmth">Temperatura</label>
+                    <input type="range" id="warmth" min="-100" max="100" value="0">
+                    <div class="value-display" id="warmthValue">0</div>
+                </div>
+                <div class="control-item">
+                    <label for="sharpen">Nitidez</label>
+                    <input type="range" id="sharpen" min="0" max="100" value="0">
+                    <div class="value-display" id="sharpenValue">0%</div>
+                </div>
+                <div class="control-item">
+                    <label for="vignette">Viñeta</label>
+                    <input type="range" id="vignette" min="0" max="100" value="0">
+                    <div class="value-display" id="vignetteValue">0%</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="action-buttons" id="actionButtons">
+            <button class="btn btn-secondary" id="resetBtn">🔄 Resetear</button>
+            <button class="btn btn-success" id="downloadBtn">📥 Descargar Mejorada</button>
+        </div>
+        
+        <div class="tips">
+            <h3>💡 Tips para mejorar tu foto:</h3>
+            <ul>
+                <li><strong>Brillo:</strong> Aumenta ligeramente para que tu rostro se vea más iluminado</li>
+                <li><strong>Contraste:</strong> Un poco más de contraste hará que la camiseta destaque</li>
+                <li><strong>Saturación:</strong> Aumenta un poco para que los colores se vean más vibrantes</li>
+                <li><strong>Temperatura:</strong> Ajusta hacia cálido para un tono más acogedor</li>
+                <li><strong>Nitidez:</strong> Un toque de nitidez hará que los detalles resalten</li>
+                <li><strong>Viñeta:</strong> Un poco de viñeta enfocará la atención en ti</li>
+            </ul>
+        </div>
+        
+        <div class="tips" style="background: linear-gradient(135deg, #ff6b6b10, #feca5710); border-left: 4px solid #ff6b6b;">
+            <h3>📱 ¿Tienes un archivo HEIC?</h3>
+            <p style="margin-bottom: 15px; color: #495057;">Los iPhones guardan fotos en formato HEIC. Conviértelas a JPG fácilmente:</p>
+            <div style="text-align: center; margin: 20px 0;">
+                <a href="https://convertio.co/es/heic-jpg/" target="_blank" class="btn btn-primary" style="text-decoration: none; display: inline-block;">
+                    🔄 Convertir HEIC a JPG
+                </a>
+            </div>
+            <p style="margin: 0; font-size: 0.9em; color: #666; text-align: center;">
+                Gratuito, rápido y seguro • Después sube tu JPG aquí
+            </p>
+        </div>
+    </div>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const photoContainer = document.getElementById('photoContainer');
+        const photoPreview = document.getElementById('photoPreview');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const controls = document.getElementById('controls');
+        const actionButtons = document.getElementById('actionButtons');
+        
+        let originalImageData = null;
+        let currentImage = null;
+        
+        // Controles
+        const brightness = document.getElementById('brightness');
+        const contrast = document.getElementById('contrast');
+        const saturation = document.getElementById('saturation');
+        const warmth = document.getElementById('warmth');
+        const sharpen = document.getElementById('sharpen');
+        const vignette = document.getElementById('vignette');
+        
+        // Valores mostrados
+        const brightnessValue = document.getElementById('brightnessValue');
+        const contrastValue = document.getElementById('contrastValue');
+        const saturationValue = document.getElementById('saturationValue');
+        const warmthValue = document.getElementById('warmthValue');
+        const sharpenValue = document.getElementById('sharpenValue');
+        const vignetteValue = document.getElementById('vignetteValue');
+        
+        // Botones
+        const resetBtn = document.getElementById('resetBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        
+        // Eventos de subida
+        uploadArea.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+        
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+        
+        function handleFile(file) {
+            // Comprobar si es HEIC
+            if (file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif')) {
+                alert('⚠️ Archivo HEIC detectado!\n\nPara convertir tu foto HEIC a JPG:\n\n📱 En iPhone:\n• Abre Configuración → Cámara → Formatos\n• Selecciona "Más compatible"\n• Toma una nueva foto\n\n💻 O usa un conversor online:\n• iLoveIMG.com\n• Convertio.co\n• CloudConvert.com\n\nDespués sube la foto convertida aquí 😊');
+                return;
+            }
+            
+            if (!file.type.startsWith('image/')) {
+                alert('Por favor, selecciona un archivo de imagen válido (JPG, PNG, WebP).');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    currentImage = img;
+                    setupCanvas(img);
+                    showEditor();
+                    applyFilters();
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        function setupCanvas(img) {
+            const maxWidth = 800;
+            const maxHeight = 600;
+            let { width, height } = img;
+            
+            if (width > maxWidth || height > maxHeight) {
+                const ratio = Math.min(maxWidth / width, maxHeight / height);
+                width *= ratio;
+                height *= ratio;
+            }
+            
+            canvas.width = width;
+            canvas.height = height;
+            photoPreview.style.maxWidth = width + 'px';
+            photoPreview.style.maxHeight = height + 'px';
+            
+            ctx.drawImage(img, 0, 0, width, height);
+            originalImageData = ctx.getImageData(0, 0, width, height);
+        }
+        
+        function showEditor() {
+            uploadArea.style.display = 'none';
+            photoContainer.style.display = 'block';
+            controls.style.display = 'grid';
+            actionButtons.style.display = 'flex';
+        }
+        
+        function applyFilters() {
+            if (!originalImageData) return;
+            
+            const imageData = new ImageData(
+                new Uint8ClampedArray(originalImageData.data),
+                originalImageData.width,
+                originalImageData.height
+            );
+            
+            const data = imageData.data;
+            const brightnessVal = brightness.value / 100;
+            const contrastVal = contrast.value / 100;
+            const saturationVal = saturation.value / 100;
+            const warmthVal = warmth.value / 100;
+            const vignetteVal = vignette.value / 100;
+            
+            // Aplicar filtros
+            for (let i = 0; i < data.length; i += 4) {
+                let r = data[i];
+                let g = data[i + 1];
+                let b = data[i + 2];
+                
+                // Brillo
+                r *= brightnessVal;
+                g *= brightnessVal;
+                b *= brightnessVal;
+                
+                // Contraste
+                r = ((r / 255 - 0.5) * contrastVal + 0.5) * 255;
+                g = ((g / 255 - 0.5) * contrastVal + 0.5) * 255;
+                b = ((b / 255 - 0.5) * contrastVal + 0.5) * 255;
+                
+                // Saturación
+                const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+                r = gray + (r - gray) * saturationVal;
+                g = gray + (g - gray) * saturationVal;
+                b = gray + (b - gray) * saturationVal;
+                
+                // Temperatura (simplificado)
+                if (warmthVal > 0) {
+                    r += warmthVal * 10;
+                    b -= warmthVal * 5;
+                } else {
+                    r += warmthVal * 5;
+                    b -= warmthVal * 10;
+                }
+                
+                // Aplicar valores
+                data[i] = Math.max(0, Math.min(255, r));
+                data[i + 1] = Math.max(0, Math.min(255, g));
+                data[i + 2] = Math.max(0, Math.min(255, b));
+            }
+            
+            // Aplicar viñeta
+            if (vignetteVal > 0) {
+                const centerX = imageData.width / 2;
+                const centerY = imageData.height / 2;
+                const maxDistance = Math.sqrt(centerX * centerX + centerY * centerY);
+                
+                for (let y = 0; y < imageData.height; y++) {
+                    for (let x = 0; x < imageData.width; x++) {
+                        const distance = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
+                        const factor = 1 - (distance / maxDistance) * vignetteVal;
+                        const index = (y * imageData.width + x) * 4;
+                        
+                        data[index] *= factor;
+                        data[index + 1] *= factor;
+                        data[index + 2] *= factor;
+                    }
+                }
+            }
+            
+            ctx.putImageData(imageData, 0, 0);
+            photoPreview.src = canvas.toDataURL();
+        }
+        
+        // Eventos de controles
+        [brightness, contrast, saturation, warmth, sharpen, vignette].forEach(control => {
+            control.addEventListener('input', () => {
+                updateValueDisplay();
+                applyFilters();
+            });
+        });
+        
+        function updateValueDisplay() {
+            brightnessValue.textContent = brightness.value + '%';
+            contrastValue.textContent = contrast.value + '%';
+            saturationValue.textContent = saturation.value + '%';
+            warmthValue.textContent = warmth.value;
+            sharpenValue.textContent = sharpen.value + '%';
+            vignetteValue.textContent = vignette.value + '%';
+        }
+        
+        // Resetear valores
+        resetBtn.addEventListener('click', () => {
+            brightness.value = 100;
+            contrast.value = 100;
+            saturation.value = 100;
+            warmth.value = 0;
+            sharpen.value = 0;
+            vignette.value = 0;
+            updateValueDisplay();
+            applyFilters();
+        });
+        
+        // Descargar imagen
+        downloadBtn.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = 'foto_mejorada_instagram.jpg';
+            link.href = canvas.toDataURL('image/jpeg', 0.9);
+            link.click();
+        });
+        
+        // Valores sugeridos para mejorar la foto
+        setTimeout(() => {
+            if (currentImage) {
+                brightness.value = 110;
+                contrast.value = 115;
+                saturation.value = 120;
+                warmth.value = 15;
+                sharpen.value = 20;
+                vignette.value = 15;
+                updateValueDisplay();
+                applyFilters();
+            }
+        }, 1000);
+        
+        updateValueDisplay();
+    </script>
+</body>
+</html>
